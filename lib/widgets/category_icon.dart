@@ -16,18 +16,43 @@ class CategoryIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
       width: size + 24,
       height: size + 24,
       decoration: BoxDecoration(
-        color: isSelected ? color : color.withOpacity(0.2),
+        gradient: isSelected
+            ? LinearGradient(
+                colors: [color, color.withValues(alpha: 0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: isSelected ? null : color.withValues(alpha: 0.12),
         shape: BoxShape.circle,
-        border: isSelected ? Border.all(color: color, width: 3) : null,
+        border: isSelected
+            ? Border.all(color: color.withValues(alpha: 0.3), width: 3)
+            : null,
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.35),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
-      child: Icon(
-        icon,
-        color: isSelected ? Colors.white : color,
-        size: size * 0.6,
+      child: AnimatedScale(
+        scale: isSelected ? 1.1 : 1.0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutBack,
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : color,
+          size: size * 0.6,
+        ),
       ),
     );
   }

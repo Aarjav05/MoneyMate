@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-class SpendingPieChart extends StatelessWidget {
+class SpendingPieChart extends StatefulWidget {
   final Map<String, double> categorySpending;
   final Map<String, Color> categoryColors;
   final Map<String, String> categoryNames;
@@ -14,54 +14,145 @@ class SpendingPieChart extends StatelessWidget {
   });
 
   @override
+  State<SpendingPieChart> createState() => _SpendingPieChartState();
+}
+
+class _SpendingPieChartState extends State<SpendingPieChart> {
+  int _touchedIndex = -1;
+
+  @override
   Widget build(BuildContext context) {
-    if (categorySpending.isEmpty) {
+    final theme = Theme.of(context);
+
+    if (widget.categorySpending.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.pie_chart_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No expenses this month',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.pie_chart_outline,
+                  size: 48,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('No expenses this month', style: theme.textTheme.bodyLarge),
+            ],
+          ),
         ),
       );
     }
 
-    final total = categorySpending.values.fold(
+    final total = widget.categorySpending.values.fold(
       0.0,
       (sum, value) => sum + value,
     );
 
-    return AspectRatio(
-      aspectRatio: 1.3,
-      child: PieChart(
-        PieChartData(
-          sectionsSpace: 2,
-          centerSpaceRadius: 40,
-          sections: categorySpending.entries.map((entry) {
-            final percentage = (entry.value / total) * 100;
-            return PieChartSectionData(
-              color: categoryColors[entry.key] ?? Colors.grey,
-              value: entry.value,
-              title: '${percentage.toStringAsFixed(1)}%',
-              radius: 60,
-              titleStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+    final sortedEntries = widget.categorySpending.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return Column(
+      children: [
+        // Chart
+        AspectRatio(
+          aspectRatio: 1.2,
+          child: PieChart(
+            PieChartData(
+              sectionsSpace: 3,
+              centerSpaceRadius: 50,
+              pieTouchData: PieTouchData(
+                touchCallback: (event, pieTouchResponse) {
+                  setState(() {
+                    if (!event.isInterestedForInteractions ||
+                        pieTouchResponse == null ||
+                        pieTouchResponse.touchedSection == null) {
+                      _touchedIndex = -1;
+                      return;
+                    }
+                    _touchedIndex =
+                        pieTouchResponse.touchedSection!.touchedSectionIndex;
+                  });
+                },
               ),
+              sections: sortedEntries.asMap().entries.map((mapEntry) {
+                final idx = mapEntry.key;
+                final entry = mapEntry.value;
+                final isTouched = idx == _touchedIndex;
+                final percentage = (entry.value / total) * 100;
+                final color = widget.categoryColors[entry.key] ?? Colors.grey;
+
+                return PieChartSectionData(
+                  color: color,
+                  value: entry.value,
+                  title: isTouched
+                      ? '${percentage.toStringAsFixed(1)}%'
+                      : percentage >= 8
+                      ? '${percentage.toStringAsFixed(0)}%'
+                      : '',
+                  radius: isTouched ? 72 : 60,
+                  titleStyle: TextStyle(
+                    fontSize: isTouched ? 16 : 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 4,
+                        color: Colors.black.withValues(alpha: 0.3),
+                      ),
+                    ],
+                  ),
+                  badgePositionPercentageOffset: .98,
+                );
+              }).toList(),
+            ),
+            swapAnimationDuration: const Duration(milliseconds: 400),
+            swapAnimationCurve: Curves.easeInOutCubic,
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Legend
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: sortedEntries.map((entry) {
+            final color = widget.categoryColors[entry.key] ?? Colors.grey;
+            final name = widget.categoryNames[entry.key] ?? 'Unknown';
+            final pct = ((entry.value / total) * 100).toStringAsFixed(1);
+
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$name ($pct%)',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             );
           }).toList(),
         ),
-      ),
+      ],
     );
   }
 }

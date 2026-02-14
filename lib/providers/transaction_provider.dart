@@ -104,17 +104,21 @@ class TransactionProvider with ChangeNotifier {
       }
 
       // Date range
-      if (filter.startDate != null && t.date.isBefore(filter.startDate!))
+      if (filter.startDate != null && t.date.isBefore(filter.startDate!)) {
         return false;
+      }
       if (filter.endDate != null &&
-          t.date.isAfter(filter.endDate!.add(const Duration(days: 1))))
+          t.date.isAfter(filter.endDate!.add(const Duration(days: 1)))) {
         return false;
+      }
 
       // Amount range
-      if (filter.minAmount != null && t.amount < filter.minAmount!)
+      if (filter.minAmount != null && t.amount < filter.minAmount!) {
         return false;
-      if (filter.maxAmount != null && t.amount > filter.maxAmount!)
+      }
+      if (filter.maxAmount != null && t.amount > filter.maxAmount!) {
         return false;
+      }
 
       // Categories
       if (filter.categoryIds != null && filter.categoryIds!.isNotEmpty) {

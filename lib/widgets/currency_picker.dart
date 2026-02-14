@@ -22,7 +22,7 @@ class CurrencyPicker extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonFormField<Currency>(
-        value: selectedCurrency,
+        initialValue: selectedCurrency,
         decoration: const InputDecoration(
           labelText: 'Currency',
           border: InputBorder.none,

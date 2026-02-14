@@ -52,12 +52,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   Future<void> _refreshData(TransactionProvider provider) async {
     await Future.delayed(const Duration(seconds: 1));
-    // Data automatically refreshes through provider
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: SafeArea(
@@ -76,210 +76,235 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               onRefresh: () => _refreshData(provider),
               child: CustomScrollView(
                 slivers: [
-                  // App Bar with Search
-                  SliverAppBar(
-                    expandedHeight: _showSearch ? 180 : 120,
-                    floating: true,
-                    pinned: true,
-                    backgroundColor: theme.scaffoldBackgroundColor,
-                    elevation: 0,
-                    flexibleSpace: FlexibleSpaceBar(
-                      titlePadding: EdgeInsets.only(
-                        left: 20,
-                        bottom: _showSearch ? 120 : 60,
-                      ),
-                      title: Text(
-                        'Transactions',
-                        style: theme.textTheme.displaySmall,
-                      ),
-                    ),
-                    actions: [
-                      // Search Icon
-                      IconButton(
-                        icon: Icon(_showSearch ? Icons.close : Icons.search),
-                        onPressed: () {
-                          setState(() {
-                            _showSearch = !_showSearch;
-                            if (!_showSearch) {
-                              _searchController.clear();
-                              provider.setFilter(
-                                provider.currentFilter.copyWith(
-                                  clearSearch: true,
-                                ),
-                              );
-                            }
-                          });
-                        },
-                      ),
-                      // Filter Icon with Badge
-                      Stack(
+                  // Header
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                      child: Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.filter_list),
-                            onPressed: () => _showFilterSheet(context),
+                          Expanded(
+                            child: Text(
+                              'Transactions',
+                              style: theme.textTheme.displaySmall,
+                            ),
                           ),
-                          if (filterCount > 0)
-                            Positioned(
-                              right: 8,
-                              top: 8,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
+                          // Search toggle
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: _showSearch
+                                  ? theme.colorScheme.primary.withValues(
+                                      alpha: 0.1,
+                                    )
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                _showSearch ? Icons.close : Icons.search,
+                                color: _showSearch
+                                    ? theme.colorScheme.primary
+                                    : null,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showSearch = !_showSearch;
+                                  if (!_showSearch) {
+                                    _searchController.clear();
+                                    provider.setFilter(
+                                      provider.currentFilter.copyWith(
+                                        clearSearch: true,
+                                      ),
+                                    );
+                                  }
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          // Filter button with badge
+                          Stack(
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.error,
-                                  shape: BoxShape.circle,
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
-                                child: Text(
-                                  '$filterCount',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    bottom: PreferredSize(
-                      preferredSize: Size.fromHeight(_showSearch ? 108 : 48),
-                      child: Column(
-                        children: [
-                          // Search Bar
-                          if (_showSearch)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
-                              ),
-                              child: TextField(
-                                controller: _searchController,
-                                decoration: InputDecoration(
-                                  hintText: 'Search transactions...',
-                                  prefixIcon: const Icon(Icons.search),
-                                  suffixIcon: _searchController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear),
-                                          onPressed: () {
-                                            _searchController.clear();
-                                            provider.setFilter(
-                                              provider.currentFilter.copyWith(
-                                                clearSearch: true,
-                                              ),
-                                            );
-                                          },
+                                  color: filterCount > 0
+                                      ? theme.colorScheme.primary.withValues(
+                                          alpha: 0.1,
                                         )
-                                      : null,
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                onChanged: (value) =>
-                                    _onSearchChanged(value, provider),
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.tune_rounded,
+                                    color: filterCount > 0
+                                        ? theme.colorScheme.primary
+                                        : null,
+                                  ),
+                                  onPressed: () => _showFilterSheet(context),
+                                ),
                               ),
-                            ),
-                          // Type Filter Chips
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              children: [
-                                _FilterChip(
-                                  label: 'All',
-                                  isSelected:
-                                      provider.currentFilter.type == null,
-                                  onTap: () {
-                                    provider.setFilter(
-                                      provider.currentFilter.copyWith(
-                                        clearType: true,
+                              if (filterCount > 0)
+                                Positioned(
+                                  right: 4,
+                                  top: 4,
+                                  child: Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.error,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '$filterCount',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    );
-                                  },
+                                    ),
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
-                                _FilterChip(
-                                  label: 'Income',
-                                  isSelected:
-                                      provider.currentFilter.type ==
-                                      TransactionType.income,
-                                  onTap: () {
-                                    provider.setFilter(
-                                      provider.currentFilter.copyWith(
-                                        type: TransactionType.income,
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                _FilterChip(
-                                  label: 'Expenses',
-                                  isSelected:
-                                      provider.currentFilter.type ==
-                                      TransactionType.expense,
-                                  onTap: () {
-                                    provider.setFilter(
-                                      provider.currentFilter.copyWith(
-                                        type: TransactionType.expense,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  // Active Filters Indicator
+                  // Search bar (animated)
+                  SliverToBoxAdapter(
+                    child: AnimatedCrossFade(
+                      firstChild: const SizedBox.shrink(),
+                      secondChild: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search transactions...',
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 20),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      provider.setFilter(
+                                        provider.currentFilter.copyWith(
+                                          clearSearch: true,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : null,
+                          ),
+                          onChanged: (value) =>
+                              _onSearchChanged(value, provider),
+                        ),
+                      ),
+                      crossFadeState: _showSearch
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                      duration: const Duration(milliseconds: 300),
+                    ),
+                  ),
+
+                  // Filter chips
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                      child: Row(
+                        children: [
+                          _FilterChip(
+                            label: 'All',
+                            isSelected: provider.currentFilter.type == null,
+                            onTap: () {
+                              provider.setFilter(
+                                provider.currentFilter.copyWith(
+                                  clearType: true,
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            label: 'Income',
+                            isSelected:
+                                provider.currentFilter.type ==
+                                TransactionType.income,
+                            icon: Icons.trending_up_rounded,
+                            onTap: () {
+                              provider.setFilter(
+                                provider.currentFilter.copyWith(
+                                  type: TransactionType.income,
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            label: 'Expenses',
+                            isSelected:
+                                provider.currentFilter.type ==
+                                TransactionType.expense,
+                            icon: Icons.trending_down_rounded,
+                            onTap: () {
+                              provider.setFilter(
+                                provider.currentFilter.copyWith(
+                                  type: TransactionType.expense,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Active filters chip
                   if (filterCount > 0)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
                         child: Chip(
                           label: Text(
                             '$filterCount active filter${filterCount > 1 ? 's' : ''}',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
                           ),
-                          deleteIcon: const Icon(Icons.close, size: 18),
+                          backgroundColor: theme.colorScheme.primary.withValues(
+                            alpha: 0.08,
+                          ),
+                          deleteIcon: const Icon(Icons.close, size: 16),
                           onDeleted: () {
                             provider.clearFilters();
                           },
+                          side: BorderSide.none,
                         ),
                       ),
                     ),
 
-                  // Transactions List
+                  // Transaction list
                   if (transactions.isEmpty)
                     SliverToBoxAdapter(
-                      child: EmptyState(
-                        icon: provider.currentFilter.hasActiveFilters
-                            ? Icons.search_off
-                            : Icons.receipt_long,
-                        title: provider.currentFilter.hasActiveFilters
-                            ? 'No Results'
-                            : 'No Transactions',
-                        message: provider.currentFilter.hasActiveFilters
-                            ? 'Try adjusting your filters'
-                            : 'Add your first transaction to get started',
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 40),
+                        child: EmptyState(
+                          icon: provider.currentFilter.hasActiveFilters
+                              ? Icons.search_off
+                              : Icons.receipt_long,
+                          title: provider.currentFilter.hasActiveFilters
+                              ? 'No Results'
+                              : 'No Transactions',
+                          message: provider.currentFilter.hasActiveFilters
+                              ? 'Try adjusting your filters'
+                              : 'Add your first transaction to get started',
+                        ),
                       ),
                     )
                   else
@@ -290,20 +315,37 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             SliverToBoxAdapter(
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  20,
-                                  20,
-                                  8,
+                                  24,
+                                  16,
+                                  24,
+                                  4,
                                 ),
-                                child: Text(
-                                  _formatDateHeader(entry.key),
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      _formatDateHeader(entry.key),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.5,
+                                            color: isDark
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF64748B),
+                                          ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Divider(
+                                        color: isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            // Transactions for this date
+                            // Transactions
                             SliverList(
                               delegate: SliverChildBuilderDelegate((
                                 context,
@@ -314,23 +356,30 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   transaction.categoryId,
                                 );
 
-                                return TransactionCard(
-                                  transaction: transaction,
-                                  category: category,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            AddTransactionScreen(
-                                              transaction: transaction,
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                  onDelete: () {
-                                    provider.deleteTransaction(transaction.id);
-                                  },
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  child: TransactionCard(
+                                    transaction: transaction,
+                                    category: category,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AddTransactionScreen(
+                                                transaction: transaction,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    onDelete: () {
+                                      provider.deleteTransaction(
+                                        transaction.id,
+                                      );
+                                    },
+                                  ),
                                 );
                               }, childCount: entry.value.length),
                             ),
@@ -338,24 +387,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         })
                         .expand((element) => element),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
             );
           },
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddTransactionScreen(),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Transaction'),
       ),
     );
   }
@@ -387,11 +424,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final yesterday = today.subtract(const Duration(days: 1));
 
     if (date == today) {
-      return 'Today';
+      return 'TODAY';
     } else if (date == yesterday) {
-      return 'Yesterday';
+      return 'YESTERDAY';
     } else {
-      return '${_getMonthName(date.month)} ${date.day}, ${date.year}';
+      return '${_getMonthName(date.month).toUpperCase()} ${date.day}, ${date.year}';
     }
   }
 
@@ -418,11 +455,13 @@ class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final IconData? icon;
 
   const _FilterChip({
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.icon,
   });
 
   @override
@@ -431,24 +470,43 @@ class _FilterChip extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.primary : theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.primary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
                 ? theme.colorScheme.primary
-                : theme.colorScheme.primary.withOpacity(0.3),
+                : theme.colorScheme.primary.withValues(alpha: 0.15),
           ),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
-            fontWeight: FontWeight.w500,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? Colors.white : theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : theme.textTheme.bodyLarge?.color,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     );
