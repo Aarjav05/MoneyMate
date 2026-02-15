@@ -40,10 +40,16 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         child: Consumer<TransactionProvider>(
           builder: (context, provider, child) {
             final spendingByCategory = provider.spendingByCategory;
+            final incomeByCategory = provider.incomeByCategory;
             final categoryColors = <String, Color>{};
             final categoryNames = <String, String>{};
 
-            for (var categoryId in spendingByCategory.keys) {
+            // Resolve colors/names for all category IDs (spending + income)
+            final allCategoryIds = {
+              ...spendingByCategory.keys,
+              ...incomeByCategory.keys,
+            };
+            for (var categoryId in allCategoryIds) {
               final category = provider.getCategoryById(categoryId);
               if (category != null) {
                 categoryColors[categoryId] = category.color;
@@ -52,6 +58,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             }
 
             final sortedSpending = spendingByCategory.entries.toList()
+              ..sort((a, b) => b.value.compareTo(a.value));
+
+            final sortedIncome = incomeByCategory.entries.toList()
               ..sort((a, b) => b.value.compareTo(a.value));
 
             return CustomScrollView(
@@ -138,7 +147,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   ),
                 ),
 
-                // Section: Spending by Category
+                // ── Spending by Category ──
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
@@ -149,7 +158,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   ),
                 ),
 
-                // Pie chart card
+                // Spending pie chart card
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
@@ -166,7 +175,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   ),
                 ),
 
-                // Section: top spending
+                // Top spending header
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
@@ -228,6 +237,98 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         percentage: percentage,
                       );
                     }, childCount: sortedSpending.length.clamp(0, 6)),
+                  ),
+
+                // ── Income by Category ──
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+                    child: Text(
+                      'Income Sources',
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                  ),
+                ),
+
+                // Income pie chart card
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: SpendingPieChart(
+                          categorySpending: incomeByCategory,
+                          categoryColors: categoryColors,
+                          categoryNames: categoryNames,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Top income header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
+                    child: Text(
+                      'Top Income',
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                  ),
+                ),
+
+                if (sortedIncome.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF10B981,
+                                ).withValues(alpha: 0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.account_balance_wallet_outlined,
+                                size: 48,
+                                color: const Color(
+                                  0xFF10B981,
+                                ).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No income this month',
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final entry = sortedIncome[index];
+                      final category = provider.getCategoryById(entry.key);
+                      final percentage = Helpers.calculatePercentage(
+                        entry.value,
+                        provider.totalIncomeConverted,
+                      );
+
+                      return _AnimatedCategoryRow(
+                        controller: _animController,
+                        index: index,
+                        category: category,
+                        amount: entry.value,
+                        percentage: percentage,
+                      );
+                    }, childCount: sortedIncome.length.clamp(0, 6)),
                   ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),

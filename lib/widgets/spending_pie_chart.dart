@@ -61,60 +61,62 @@ class _SpendingPieChartState extends State<SpendingPieChart> {
 
     return Column(
       children: [
-        // Chart
-        AspectRatio(
-          aspectRatio: 1.2,
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 3,
-              centerSpaceRadius: 50,
-              pieTouchData: PieTouchData(
-                touchCallback: (event, pieTouchResponse) {
-                  setState(() {
-                    if (!event.isInterestedForInteractions ||
-                        pieTouchResponse == null ||
-                        pieTouchResponse.touchedSection == null) {
-                      _touchedIndex = -1;
-                      return;
-                    }
-                    _touchedIndex =
-                        pieTouchResponse.touchedSection!.touchedSectionIndex;
-                  });
-                },
-              ),
-              sections: sortedEntries.asMap().entries.map((mapEntry) {
-                final idx = mapEntry.key;
-                final entry = mapEntry.value;
-                final isTouched = idx == _touchedIndex;
-                final percentage = (entry.value / total) * 100;
-                final color = widget.categoryColors[entry.key] ?? Colors.grey;
+        // Chart — constrained so it doesn't blow up on wide screens
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 280, maxHeight: 280),
+            child: PieChart(
+              PieChartData(
+                sectionsSpace: 3,
+                centerSpaceRadius: 40,
+                pieTouchData: PieTouchData(
+                  touchCallback: (event, pieTouchResponse) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions ||
+                          pieTouchResponse == null ||
+                          pieTouchResponse.touchedSection == null) {
+                        _touchedIndex = -1;
+                        return;
+                      }
+                      _touchedIndex =
+                          pieTouchResponse.touchedSection!.touchedSectionIndex;
+                    });
+                  },
+                ),
+                sections: sortedEntries.asMap().entries.map((mapEntry) {
+                  final idx = mapEntry.key;
+                  final entry = mapEntry.value;
+                  final isTouched = idx == _touchedIndex;
+                  final percentage = (entry.value / total) * 100;
+                  final color = widget.categoryColors[entry.key] ?? Colors.grey;
 
-                return PieChartSectionData(
-                  color: color,
-                  value: entry.value,
-                  title: isTouched
-                      ? '${percentage.toStringAsFixed(1)}%'
-                      : percentage >= 8
-                      ? '${percentage.toStringAsFixed(0)}%'
-                      : '',
-                  radius: isTouched ? 72 : 60,
-                  titleStyle: TextStyle(
-                    fontSize: isTouched ? 16 : 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 4,
-                        color: Colors.black.withValues(alpha: 0.3),
-                      ),
-                    ],
-                  ),
-                  badgePositionPercentageOffset: .98,
-                );
-              }).toList(),
+                  return PieChartSectionData(
+                    color: color,
+                    value: entry.value,
+                    title: isTouched
+                        ? '${percentage.toStringAsFixed(1)}%'
+                        : percentage >= 8
+                        ? '${percentage.toStringAsFixed(0)}%'
+                        : '',
+                    radius: isTouched ? 60 : 50,
+                    titleStyle: TextStyle(
+                      fontSize: isTouched ? 14 : 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 4,
+                          color: Colors.black.withValues(alpha: 0.3),
+                        ),
+                      ],
+                    ),
+                    badgePositionPercentageOffset: .98,
+                  );
+                }).toList(),
+              ),
+              swapAnimationDuration: const Duration(milliseconds: 400),
+              swapAnimationCurve: Curves.easeInOutCubic,
             ),
-            swapAnimationDuration: const Duration(milliseconds: 400),
-            swapAnimationCurve: Curves.easeInOutCubic,
           ),
         ),
 

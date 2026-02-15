@@ -63,6 +63,20 @@ class TransactionProvider with ChangeNotifier {
     return result;
   }
 
+  // Get income by category
+  Map<String, double> get incomeByCategory {
+    final income = currentMonthTransactions.where(
+      (t) => t.type == TransactionType.income,
+    );
+
+    final Map<String, double> result = {};
+    for (var transaction in income) {
+      result[transaction.categoryId] =
+          (result[transaction.categoryId] ?? 0) + transaction.amount;
+    }
+    return result;
+  }
+
   // Get category by ID
   models.Category? getCategoryById(String id) {
     return StorageService.categoriesBox.get(id);
